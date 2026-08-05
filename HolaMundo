@@ -1,0 +1,6 @@
+int main()
+{
+    cout<<"Hola Mundo Ariana";
+
+    return 0;
+}
