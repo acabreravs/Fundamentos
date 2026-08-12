@@ -1,0 +1,17 @@
+#include <iostream>
+#include <cmath>
+using namespace std;
+int main()
+{
+    float s,area,d,e,f;
+    cout<<"Escribir el primer lado: ";
+    cin>>d;
+    cout<<"Escribir el segundo lado: ";
+    cin>>e;
+    cout<<"Escribir el tercer lado: ";
+    cin>>f;
+    s=(d+e+f)/2;
+    area= sqrt(s*(s-d)*(s-e)*(s-f));
+    cout<<"El área del triángulo es: "<<area;
+    return 0;
+}
