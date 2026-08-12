@@ -1,0 +1,13 @@
+#include <iostream>
+using namespace std;
+int main()
+{
+    double x,y,r;
+    cout<<"Escribir el primer número: ";
+    cin>>x;
+    cout<<"Escribir el segundo número: ";
+    cin>>y;
+    r=(x+y)/2;
+    cout<<"La media aritmética es: "<<r;
+    return 0;
+}
