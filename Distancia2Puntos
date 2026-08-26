@@ -1,0 +1,18 @@
+#include <iostream>
+#include <math.h>
+using namespace std;
+int main()
+{
+    float x1,y1,x2,y2;
+    cout<<"Introduzca la coordenada x del P1: ";
+    cin>>x1;
+    cout<<"Introduzca la coordenada y del P1: ";
+    cin>>y1;
+    cout<<"Introduzca la coordenada x del P2: ";
+    cin>>x2;
+    cout<<"Introduzca la coordenada y del P2: ";
+    cin>>y2;
+    d=sqrt(pow((x2-x1),2)+pow((y2-y1),2));
+    cout<<"La distancia entre los 2 puntos es: "<<d;
+    return 0;
+}
