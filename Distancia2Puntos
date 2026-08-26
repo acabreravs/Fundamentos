@@ -3,7 +3,7 @@
 using namespace std;
 int main()
 {
-    float x1,y1,x2,y2;
+    float x1,y1,x2,y2,d;
     cout<<"Introduzca la coordenada x del P1: ";
     cin>>x1;
     cout<<"Introduzca la coordenada y del P1: ";
