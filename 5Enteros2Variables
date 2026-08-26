@@ -1,0 +1,15 @@
+#include <iostream>
+using namespace std;
+int main()
+{
+    double s=0;
+    int v;
+    cout<<"Ingresa 5 enteros: ";
+    cin>>v;s+=v;
+    cin>>v;s+=v;
+    cin>>v;s+=v;
+    cin>>v;s+=v;
+    cin>>v;s+=v;
+    cout<<"El promedio es: "<<s/5.0<< endl;
+    return 0;
+}
