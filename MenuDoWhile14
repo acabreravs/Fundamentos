@@ -1,0 +1,62 @@
+#include <iostream>
+using namespace std;
+int main()
+{
+    int cantidad,opcion, cantham=0,canthamQS=0, cantpap=0,cantsoda=0;
+    float parcial, totalham=0,totalhamQS=0,totalpap=0,totalsoda=0;
+    do
+    {
+        cout<<"Menú: "<<endl;
+        cout<<"ITEM"<<endl;
+        cout<<"1.- Hamburguesas(3bs)"<<endl;
+        cout<<"2.- Hamburguesas con queso(5Bs)"<<endl;
+        cout<<"3.- Papas fritas(2Bs)"<<endl;
+        cout<<"4.- Soda(2.5Bs)"<<endl;
+        cout<<"0.- Salir"<<endl;
+        cout<<"¿Qué desea pedir? "<<endl;
+        cin>>opcion;
+        switch(opcion)
+        {
+            case 1: 
+                cout<<"¿Cuántas hamburguesas desea? "<<endl;
+                cin>>cantidad;
+                cantham=cantham+cantidad;
+                parcial=cantidad*3;
+                totalham=totalham+parcial;
+                break;
+            case 2:
+                cout<<"¿Cuántas hamburguesas con queso desea? "<<endl;
+                cin>>cantidad;
+                canthamQS=canthamQS+cantidad;
+                parcial=cantidad*5;
+                totalhamQS=totalhamQS+parcial;
+                break;
+            case 3:
+                cout<<"¿Cuántas papas fritas desea? "<<endl;
+                cin>>cantidad;
+                cantpap=cantpap+cantidad;
+                parcial=cantidad*2;
+                totalpap=totalpap+parcial;
+                break;
+            case 4:
+                cout<<"¿Cuántas sodas desea? "<<endl;
+                cin>>cantidad;
+                cantsoda=cantsoda+cantidad;
+                parcial=cantidad*2.5;
+                totalsoda=totalsoda+parcial;
+                break;
+            case 0:
+                cout<<"Salir"<<endl;
+                break;
+            default:
+            cout<<"Error"<<endl;
+        }
+    }while(opcion !=0);
+    cout<<"ITEM		  "<<"\t"<<"\t"<<"CANTIDAD"<<"\t"<<"TOTAL PARCIAL"<<endl;
+	cout<<"Hamburguesas (3Bs)"<<"\t"<<"\t"<<cantham<<"\t"<<"\t"<<totalham<<endl;				
+	cout<<"Hamburguesas con queso (5Bs)"<<"\t"<<canthamQS<<"\t"<<"\t"<<totalhamQS<<endl;		
+	cout<<"Papas fritas (2Bs)"<<"\t"<<"\t"<<cantpap<<"\t"<<"\t"<<totalpap<<endl;		
+	cout<<"Soda	(2.5Bs)"<<"\t"<<"\t"<<"\t"<<cantsoda<<"\t"<<"\t"<<totalsoda<<endl;			
+	cout<<"T O T A L   "<<"\t"<<"\t"<<"\t"<<cantham+canthamQS+cantpap+cantsoda<<"\t"<<"\t"<<totalham+totalhamQS+totalpap+totalsoda<<endl;		
+    return 0;
+}
