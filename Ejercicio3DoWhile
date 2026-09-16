@@ -1,0 +1,15 @@
+#include <iostream>
+#include<cmath>
+using namespace std;
+int main()
+{
+    int cont=1, suma=0,n;
+    cout<<"Ingrese cuantos elementos desea: "<<endl;
+    cin>>n;
+    do{
+        suma=suma+pow(cont,2);
+        cont++;
+    }while(cont<=n);
+    cout<<"La suma es: "<<suma<<endl;
+    return 0;
+}
