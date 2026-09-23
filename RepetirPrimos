@@ -1,0 +1,33 @@
+#include <iostream>
+#include <cmath>
+using namespace std;
+int main()
+{
+    char res;
+    do
+    {
+        int n,cont=2, primos=0;
+        cout<<"Ingrese el número de números primos a generar: ";
+        cin>>n;
+        cout<<"Son: "<<endl;
+        while(primos<n){
+            bool flag=true;
+            for(int i=2;i<=sqrt(cont);i++){
+                if(cont%i==0){
+                flag=false;
+                break;
+                }
+            }
+            if(flag){
+                cout<<cont<<",";
+                primos++;
+            }
+            cont++;
+        }
+        cout<<endl;
+        cout<<"Desea ingresar otro número?: "<<endl;
+        cin>>res;
+    }while(res=='s'||res=='S');
+    
+    return 0;
+}
