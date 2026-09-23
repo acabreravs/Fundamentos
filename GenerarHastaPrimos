@@ -4,7 +4,7 @@ using namespace std;
 int main()
 {
     int n,cont=2, primos=0;
-    cout<<"Ingrese el mayor número a generar de números primos: ";
+    cout<<"Ingrese el número de números primos a generar: ";
     cin>>n;
     while(primos<n)
     {
