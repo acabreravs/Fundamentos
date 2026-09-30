@@ -1,0 +1,19 @@
+#include <iostream>
+#include <math.h>
+using namespace std;
+int main()
+{
+    float num, suma = 0, t;
+    int n;
+    cout << "Ingrese el número: " << endl;
+    cin >> num;
+    cout << "Ingrese hasta qué potencia n se elevará el número: " << endl;
+    cin >> n;
+    for (int i = 1; i <= n; i++)
+    {
+        t = pow(num, i);
+        suma = suma + t;
+    }
+    cout << "La suma es: " << suma;
+    return 0;
+}
