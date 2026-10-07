@@ -1,0 +1,73 @@
+#include <iostream>
+#include <stdlib.h>
+#include <math.h>
+using namespace std;
+int menor(int a, int b);
+int signo(float r);
+int potencia(int base, int exp);
+void main()
+{
+	float b, a, d, f, Fac;
+	int x, y,m,n;
+	int opcion;
+	do {
+		cout << "\t\t Menú \n";
+		cout << "\t\t === \n";
+		cout << "1. El menor de 2 números \n";
+		cout << "2. El signo de un número \n";
+		cout << "3. El potencia de un número entero elevado a otro \n";
+		cout << "0. Salir \n";
+		cout << "Opción: ";
+		cin >> opcion;
+		switch (opcion) 
+		{
+			case 1:
+				cout << "Ingrese el primer número: ";
+				cin >> x;
+				cout << "Ingrese el 2do número: ";
+				cin >> y;
+				cout << "El número menor es: " << menor(x, y);
+				break;
+			case 2: 
+				cout << "Ingrese el número: ";
+				cin >> b;
+				cout << "El signo del número es: " << signo(b);
+				break;
+			case 3: 
+				cout << "Ingrese el número entero: ";
+				cin >> n;
+				cout << "Ingrese la potencia: ";
+				cin >> m;
+				cout << "La potencia es: " << potencia(n, m);
+				break;
+			case 0: cout << "Saliendo del menú";
+				break;
+			default:cout << "Error de opción";
+				break;
+		}
+		system("pause");
+		system("cls");
+
+	} while (opcion != 0);
+}
+int menor(int a, int b) {
+	if (a > b)
+		return b;
+	else
+		return a;
+}
+int signo(float r) {
+	if (r == 0)
+		return 0;
+	else
+		if (r < 0)
+			return -1;
+		else
+			return 1;
+}
+int potencia(int base, int exp) {
+	int acum = 1;
+	for (int i = 1; i <= exp; i++)
+		acum = acum * base;
+	return acum;
+}
