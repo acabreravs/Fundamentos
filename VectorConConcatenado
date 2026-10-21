@@ -1,0 +1,89 @@
+#include <iostream>
+#define MAX 100//Constante de compilador
+using namespace std;
+//prototipos
+void cargar(int a[], int tam);
+void mostrar(int a[], int tam);
+void burbuja(int a[], int tam);
+void concatenar(int a[], int tam1, int b[], int tam2, int c[], int& tam3);
+int main()
+{
+    int opcion,n=0,v[MAX];
+    int v2[MAX], n2=0;
+    int v3[MAX * 2], n3=0;
+    do {
+        cout << " MENU " << endl;
+        cout << "1. Cargar " << endl;
+        cout << "2. Mostrar " << endl;
+        cout << "3. Clasificar " << endl;
+        cout << "4. Concatenar con otro vector " << endl;
+        cout << "0. Salir " << endl;
+        cout << "Selecciona una opcion: " << endl;
+        cin >> opcion;
+        switch (opcion) 
+        {
+            case 1:
+                do {
+                    cout << "Cuantos elementos quiere?: " << endl;
+                    cin >> n;
+                } while (n > MAX || n < 0);
+                cargar(v,n);
+                break;
+            case 2:
+                mostrar(v, n);
+                break;
+            case 3:
+                burbuja(v, n);
+                break;
+            case 4: 
+                cout << "Cargar el segundo vector: " << endl;
+                do {
+                    cout << "Cuantos elementos quiere para el 2do vector?: ";
+                    cin >> n2;
+                } while (n2 > MAX || n2 < 0);
+                cargar(v2, n2);
+                concatenar(v, n, v2, n2, v3, n3);
+                cout << "Aqui esta tu vector concatenado: "<<endl;
+                mostrar(v3, n3);
+                break;
+            case 0:
+                cout << "Saliendo del programa...";
+                break;
+            default:
+                cout << "ERROR ";
+        }
+    } while (opcion != 0);
+    
+}
+//Declaración de funciones
+void cargar(int a[], int tam) {
+    for (int i = 0; i < tam; i++) {
+        cout << "V[" << i << "]= ";
+        cin >> a[i];
+    }
+}//Pide los datos en el vector
+void mostrar(int a[], int tam) {
+    for (int i = 0; i < tam; i++) {
+        cout << "V[" << i << "]= ";
+        cout<< a[i]<<endl;
+    }
+}
+void burbuja(int a[], int tam) {
+    int aux;
+    for (int i = 0; i < tam - 1; i++) {
+        for (int j = i + 1; j < tam; j++) {
+            if (a[i] > a[j]) {
+                aux = a[j];
+                a[j] = a[i];
+                a[i] = aux;
+            }
+        }
+    }
+}
+void concatenar(int a[], int tam1, int b[], int tam2, int c[], int& tam3) {
+    tam3 = tam1 + tam2;
+    for (int i = 0; i < tam1; i++)
+        c[i] = a[i];
+    for (int i = 0; i < tam2; i++)
+        c[tam1+i] = b[i];
+}
