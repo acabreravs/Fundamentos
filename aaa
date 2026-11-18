@@ -1,11 +1,4 @@
-Visual Studio te marca error principalmente porque declaras los prototipos de las funciones pero todavía no has escrito el cuerpo de la mayoría de ellas (el enlazador o linker falla al no encontrarlas), además de un par de detalles de sintaxis en lo que ya escribiste.
-Los errores exactos en tu código actual son:
- * Funciones sin implementar (Error de Linker LNK2019): Declaraste arriba modificar_usuario(), borrar_usuario(), login(), registrar_persona(), listar_persona(), borrar_persona(), modificar_persona() y menu_personas(), pero aún no las escribiste debajo. C++ no compila si llamas a funciones que no tienen cuerpo.
- * Nombre distinto en listar_usuario: En el prototipo y en el main pusiste listar_usuario() (en singular), pero abajo la escribiste como void listar_usuarios() (en plural).
- * Faltan paréntesis en borrar_usuario: En el main (opción 4) pusiste borrar_usuario; en lugar de borrar_usuario();.
- * Error lógico en validación de día: En validar_fecha escribiste if (dias<1 || dia>dias) en lugar de if (dia < 1 || dia > dias).
-Código completo y corregido para pegar en Visual Studio
-Aquí tienes el código completo con todas las funciones terminadas (usando struct, tal como lo empezaste en tu archivo) para que te compile a la primera sin errores:
+
 #include <iostream>
 #include <string>
 #define MAX 100
@@ -360,4 +353,3 @@ void menu_personas() {
 	}
 }
 
-Tip rápido: Si quieres probar tu código en Visual Studio mientras vas escribiendo función por función sin que te dé error, comenta (//) los prototipos y las llamadas en el main de las funciones que todavía no hayas terminado de escribir.
