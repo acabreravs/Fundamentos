@@ -128,8 +128,7 @@ void listar_usuarios() {
 	if (cant_usuarios == 0)
 		cout << "No hay usuarios registrados";
 	else {
-		for (int i = 0; i < cant_usuarios; i++) {
-			cout<<"\nUsuario"
-		}
+		for (int i = 0; i < cant_usuarios; i++)
+			cout<<"Usuario";
 	}
 }
