@@ -1,0 +1,1338 @@
+#include "raylib.h"
+#include <iostream>
+#include <string>
+#include <iomanip>
+using namespace std;
+#define MAX 100
+struct Usuario {
+    int id;
+    string nombre;
+    string tipo;
+    bool activo;
+};
+struct Comercio {
+    int id;
+    int idUsuario;
+    string nombre;
+    string direccion;
+    string telefono;
+    bool activo;
+};
+struct Producto {
+    int id;
+    int idComercio;
+    string nombre;
+    double precioOriginal;
+    double precioOferta;
+    int stock;
+    bool activo;
+};
+struct Reserva {
+    int id;
+    int idCliente;
+    int idProducto;
+    int cantidad;
+    double total;
+    string estado;
+};
+//arreglos y contadores
+Usuario usuarios[MAX];
+Comercio comercios[MAX];
+Producto productos[MAX];
+Reserva reservas[MAX];
+string contrasenas[MAX];
+int nUsuarios = 0;
+int nComercios = 0;
+int nProductos = 0;
+int nReservas = 0;
+int siguienteComercio = 1;
+int siguienteProducto = 1;
+int siguienteReserva = 1;
+//Colores para la interfaz
+Color VERDE = { 35, 105, 75, 255 };
+Color VERDE_CLARO = { 65, 145, 105, 255 };
+Color CREMA = { 248, 247, 238, 255 };
+Color BLANCO = { 255, 255, 255, 255 };
+Color GRIS = { 90, 95, 90, 255 };
+Color NARANJA = { 230, 155, 65, 255 };
+Color ROJO = { 180, 65, 55, 255 };
+enum Pantalla {
+    BIENVENIDA,
+    PRINCIPAL,
+    ADMIN_ACCESO,
+    REGISTRO_USUARIO,
+    INICIO_SESION,
+
+    ADMINISTRADOR,
+    ADMIN_COMERCIOS,
+    ADMIN_PRODUCTOS,
+    ADMIN_REGISTRAR_COMERCIO,
+    ADMIN_CLIENTES,
+    ADMIN_RESERVAS,
+    ADMIN_RESUMEN,
+    ADMIN_FINANZAS,
+
+    COMERCIO_ACCESO,
+    COMERCIO_MENU,
+    COMERCIO_PRODUCTOS,
+    COMERCIO_PUBLICAR,
+    COMERCIO_STOCK,
+    COMERCIO_RESERVAS,
+    COMERCIO_COMPLETAR,
+
+    CLIENTE_ACCESO,
+    CLIENTE_REGISTRAR,
+    CLIENTE_MENU,
+    CLIENTE_PRODUCTOS,
+    CLIENTE_BUSCAR,
+    CLIENTE_RESERVAR,
+    CLIENTE_RESERVAS,
+    CLIENTE_CANCELAR
+};
+Pantalla pantallaActual = BIENVENIDA;
+string mensaje = "";
+int comercioActual = -1; // id del comercio seleccionado
+int clienteActual = -1;  // id del cliente seleccionado
+//campos, foco y validación
+string campos[4];
+int campoActivo = 0;
+int cantidadCamposActivos = 1;
+bool formularioError = false;
+string textoError = "";
+//Prototipos de funciones
+void LimpiarFormulario(int cantidadCampos);
+void IrAPantalla(Pantalla destino);
+int buscarProductoPorID(int id);
+int buscarComercioPorID(int id);
+void registrarComercioDatos(const string& nombre, const string& direccion, const string& telefono, const string& contrasena);
+void registrarClienteDatos(const string& nombre, const string& contrasena);
+bool publicarProductoDatos(int idComercio, const string& nombre, double original, double oferta, int stock);
+bool actualizarStockDatos(int idComercio, int idProducto, int cantidad);
+bool realizarReservaDatos(int idCliente, int idProducto, int cantidad);
+bool cancelarReservaDatos(int idCliente, int idReserva);
+bool completarReservaDatos(int idComercio, int idReserva);
+double calcularDescuento(double original, double oferta);
+double calcularPorcentajeDescuento(double original, double oferta);
+double calcularIngresosTotales();
+void inicializarAdministrador();
+bool iniciarSesionDatos(int id, const string& contrasena);
+int buscarUsuarioPorID(int id);
+double calcularTotalReserva(double precio, int cantidad);
+double calcularAhorroCliente(int idCliente);
+double calcularIngresosComercio(int idComercio);
+void PantallaRegistroUsuario();
+void PantallaInicioSesion();
+//Prototipos para los gráficos de pantallas
+void PantallaBienvenida();
+void MenuPrincipal();
+void PantallaAccesoAdministrador();
+void PantallaRegistroUsuario();
+void PantallaInicioSesion();
+void MenuAdministrador();
+void PantallaComercios();
+void PantallaProductos();
+void PantallaRegistrarComercio();
+void PantallaClientesAdmin();
+void PantallaReservasAdmin();
+void PantallaResumen();
+void PantallaFinanzas();
+void PantallaAccesoComercio();
+void MenuComercio();
+void PantallaProductosComercio();
+void PantallaPublicarProducto();
+void PantallaActualizarStock();
+void PantallaReservasComercio();
+void PantallaCompletarReserva();
+void PantallaAccesoCliente();
+void PantallaRegistrarCliente();
+void MenuCliente();
+void PantallaProductosCliente();
+void PantallaBuscarProducto();
+void PantallaRealizarReserva();
+void PantallaMisReservas();
+void PantallaCancelarReserva();
+//main
+int main() {
+    inicializarAdministrador();
+    InitWindow(1100, 700, "RescateFood SCZ");
+    SetTargetFPS(60);
+    while (!WindowShouldClose()) {
+        BeginDrawing();
+        switch (pantallaActual) {
+        case BIENVENIDA: PantallaBienvenida(); break;
+        case PRINCIPAL: MenuPrincipal(); break;
+        case ADMIN_ACCESO: PantallaAccesoAdministrador(); break;
+        case REGISTRO_USUARIO: PantallaRegistroUsuario(); break;
+        case INICIO_SESION: PantallaInicioSesion(); break;
+
+        case ADMINISTRADOR: MenuAdministrador(); break;
+        case ADMIN_COMERCIOS: PantallaComercios(); break;
+        case ADMIN_PRODUCTOS: PantallaProductos(); break;
+        case ADMIN_REGISTRAR_COMERCIO: PantallaRegistrarComercio(); break;
+        case ADMIN_CLIENTES: PantallaClientesAdmin(); break;
+        case ADMIN_RESERVAS: PantallaReservasAdmin(); break;
+        case ADMIN_RESUMEN: PantallaResumen(); break;
+        case ADMIN_FINANZAS: PantallaFinanzas(); break;
+
+        case COMERCIO_ACCESO: PantallaAccesoComercio(); break;
+        case COMERCIO_MENU: MenuComercio(); break;
+        case COMERCIO_PRODUCTOS: PantallaProductosComercio(); break;
+        case COMERCIO_PUBLICAR: PantallaPublicarProducto(); break;
+        case COMERCIO_STOCK: PantallaActualizarStock(); break;
+        case COMERCIO_RESERVAS: PantallaReservasComercio(); break;
+        case COMERCIO_COMPLETAR: PantallaCompletarReserva(); break;
+
+        case CLIENTE_ACCESO: PantallaAccesoCliente(); break;
+        case CLIENTE_REGISTRAR: PantallaRegistrarCliente(); break;
+        case CLIENTE_MENU: MenuCliente(); break;
+        case CLIENTE_PRODUCTOS: PantallaProductosCliente(); break;
+        case CLIENTE_BUSCAR: PantallaBuscarProducto(); break;
+        case CLIENTE_RESERVAR: PantallaRealizarReserva(); break;
+        case CLIENTE_RESERVAS: PantallaMisReservas(); break;
+        case CLIENTE_CANCELAR: PantallaCancelarReserva(); break;
+        }
+        EndDrawing();
+    }
+
+    CloseWindow();
+    return 0;
+}
+void LimpiarFormulario(int cantidadCampos) {
+    for (int i = 0; i < 4; i++) campos[i].clear();
+    cantidadCamposActivos = (cantidadCampos < 1 || cantidadCampos > 4) ? 1 : cantidadCampos;
+    campoActivo = 0;
+    formularioError = false;
+    textoError.clear();
+}
+void IrAPantalla(Pantalla destino) {
+    pantallaActual = destino;
+    mensaje.clear();
+    formularioError = false;
+    textoError.clear();
+}
+//graficas generales
+bool Boton(float x, float y, float ancho, float alto, const char* texto) {
+    Rectangle r = { x, y, ancho, alto };
+    Vector2 mouse = GetMousePosition();
+    bool encima = CheckCollisionPointRec(mouse, r);
+    DrawRectangleRec(r, encima ? VERDE_CLARO : VERDE);
+    DrawRectangleLinesEx(r, 2, VERDE);
+    int tam = MeasureText(texto, 20);
+    DrawText(texto, (int)(x + (ancho - tam) / 2), (int)(y + (alto - 20) / 2), 20, BLANCO);
+    return encima && IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
+}
+void DibujarEncabezado(const char* titulo) {
+    DrawRectangle(0, 0, 1100, 95, VERDE);
+    DrawText("RESCATEFOOD SCZ", 35, 20, 32, BLANCO);
+    DrawText(titulo, 38, 58, 18, BLANCO);
+    DrawCircle(1040, 45, 23, NARANJA);
+    DrawText("R", 1032, 29, 32, BLANCO);
+}
+void DibujarMarcoContenido(const char* titulo) {
+    ClearBackground(CREMA);
+    DibujarEncabezado(titulo);
+}
+void DibujarTextoCentrado(const string& texto, int y, int tam, Color color) {
+    int ancho = MeasureText(texto.c_str(), tam);
+    DrawText(texto.c_str(), (1100 - ancho) / 2, y, tam, color);
+}
+void DibujarMensaje() {
+    if (!mensaje.empty())
+        DrawText(mensaje.c_str(), 65, 665, 17, NARANJA);
+}
+void VolverAdministrador() { IrAPantalla(ADMINISTRADOR); }
+void VolverComercio() { IrAPantalla(COMERCIO_MENU); }
+void VolverCliente() { IrAPantalla(CLIENTE_MENU); }
+string TextoUsuarioPorID(int id) {
+    for (int i = 0; i < nUsuarios; i++)
+        if (usuarios[i].id == id) return usuarios[i].nombre;
+    return "ID " + to_string(id);
+}
+string TextoProductoPorID(int id) {
+    for (int i = 0; i < nProductos; i++)
+        if (productos[i].id == id) return productos[i].nombre;
+    return "ID " + to_string(id);
+}
+string TextoComercioPorID(int id) {
+    for (int i = 0; i < nComercios; i++)
+        if (comercios[i].id == id) return comercios[i].nombre;
+    return "ID " + to_string(id);
+}
+//entradas de texto para formularios
+void DibujarCampo(int x, int y, int ancho, const char* etiqueta,
+    const string& valor, bool activo, bool numerico = false) {
+    DrawText(etiqueta, x, y - 27, 18, GRIS);
+    DrawRectangleRec({ (float)x, (float)y, (float)ancho, 48 }, BLANCO);
+    DrawRectangleLinesEx({ (float)x, (float)y, (float)ancho, 48 }, 2,
+        activo ? VERDE_CLARO : GRIS);
+    string visible = valor;
+    if (visible.size() > 48)
+        visible = visible.substr(visible.size() - 48);
+    DrawText(visible.c_str(), x + 12, y + 14, 18, GRIS);
+    if (activo && ((int)(GetTime() * 2) % 2 == 0)) {
+        int cursorX = x + 12 + MeasureText(visible.c_str(), 18);
+        DrawLine(cursorX, y + 10, cursorX, y + 37, VERDE);
+    }
+}
+void ProcesarEntradaCampo(int maxCaracteres = 70, bool permitirDecimal = false) {
+    int tecla = GetCharPressed();
+    while (tecla > 0) {
+        bool valido = (tecla >= 32 && tecla <= 125);
+        if (permitirDecimal)
+            valido = valido && ((tecla >= '0' && tecla <= '9') || tecla == '.');
+        if (valido && (int)campos[campoActivo].size() < maxCaracteres)
+            campos[campoActivo] += (char)tecla;
+        tecla = GetCharPressed();
+    }
+    if (IsKeyPressed(KEY_BACKSPACE) && !campos[campoActivo].empty())
+        campos[campoActivo].pop_back();
+    if (IsKeyPressed(KEY_TAB) || IsKeyPressed(KEY_ENTER))
+        campoActivo = (campoActivo + 1) % cantidadCamposActivos;
+}
+void DibujarErrorFormulario() {
+    if (formularioError && !textoError.empty())
+        DrawText(textoError.c_str(), 190, 525, 17, ROJO);
+}
+bool ConvertirEntero(const string& texto, int& valor) {
+    if (texto.empty()) return false;
+    try {
+        size_t pos = 0;
+        int n = stoi(texto, &pos);
+        if (pos != texto.size()) return false;
+        valor = n;
+        return true;
+    }
+    catch (...) { return false; }
+}
+bool ConvertirDecimal(const string& texto, double& valor) {
+    if (texto.empty()) return false;
+    try {
+        size_t pos = 0;
+        double n = stod(texto, &pos);
+        if (pos != texto.size()) return false;
+        valor = n;
+        return true;
+    }
+    catch (...) { return false; }
+}
+//inicio y menu principal
+void PantallaBienvenida() {
+    ClearBackground(CREMA);
+    DrawCircle(550, 220, 100, VERDE);
+    DrawText("R", 515, 155, 120, BLANCO);
+    DrawText("RESCATEFOOD SCZ", 290, 350, 48, VERDE);
+    DrawText("Rescatamos alimentos, reducimos desperdicios", 290, 415, 23, GRIS);
+    DrawText("y conectamos comercios con consumidores.", 325, 450, 23, GRIS);
+    if (Boton(400, 530, 300, 65, "INGRESAR"))
+        IrAPantalla(PRINCIPAL);
+    DrawText("Santa Cruz de la Sierra - Bolivia", 395, 650, 18, GRIS);
+}
+void MenuPrincipal() {
+    ClearBackground(CREMA);
+    DibujarEncabezado("MENU PRINCIPAL");
+    DibujarTextoCentrado("Bienvenido a RescateFood SCZ", 145, 32, VERDE);
+    DibujarTextoCentrado("Selecciona el tipo de usuario:", 210, 22, GRIS);
+
+    if (Boton(350, 285, 400, 65, "ADMINISTRADOR")) {
+        LimpiarFormulario(1);
+        IrAPantalla(ADMIN_ACCESO);
+    }
+    if (Boton(350, 380, 400, 65, "COMERCIO")) {
+        LimpiarFormulario(1);
+        IrAPantalla(COMERCIO_ACCESO);
+    }
+    if (Boton(350, 475, 400, 65, "CLIENTE")) {
+        LimpiarFormulario(1);
+        IrAPantalla(CLIENTE_ACCESO);
+    }
+    DrawText("Sistema de aprovechamiento de alimentos", 330, 625, 20, GRIS);
+}
+//Acceso protegido del administrador
+void PantallaAccesoAdministrador() {
+    DibujarMarcoContenido("ACCESO DE ADMINISTRADOR");
+    DibujarTextoCentrado("Ingresa la contrasena del administrador", 175, 23, VERDE);
+    DibujarCampo(350, 275, 400, "Contrasena", campos[0], campoActivo == 0);
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+        Vector2 m = GetMousePosition();
+        if (CheckCollisionPointRec(m, { 350, 275, 400, 48 })) campoActivo = 0;
+    }
+    ProcesarEntradaCampo(60, false);
+    if (formularioError) DrawText(textoError.c_str(), 350, 365, 17, ROJO);
+    if (Boton(350, 420, 190, 55, "INGRESAR")) {
+        if (iniciarSesionDatos(1, campos[0])) {
+            IrAPantalla(ADMINISTRADOR);
+        }
+        else {
+            formularioError = true;
+            textoError = "Contrasena incorrecta.";
+        }
+    }
+    if (Boton(600, 420, 190, 55, "VOLVER")) {
+        LimpiarFormulario(1);
+        IrAPantalla(PRINCIPAL);
+    }
+}
+//registro e inciar sesion
+void PantallaRegistroUsuario() {
+    DibujarMarcoContenido("REGISTRO DE USUARIO");
+    DibujarTextoCentrado("Completa tus datos para crear una cuenta", 120, 22, VERDE);
+    DibujarCampo(250, 185, 600, "Nombre completo", campos[0], campoActivo == 0);
+    DibujarCampo(250, 270, 600, "Contrasena", campos[1], campoActivo == 1);
+    DibujarTextoCentrado("Tipo de cuenta:", 355, 19, GRIS);
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+        Vector2 m = GetMousePosition();
+        if (CheckCollisionPointRec(m, { 250, 185, 600, 48 })) campoActivo = 0;
+        if (CheckCollisionPointRec(m, { 250, 270, 600, 48 })) campoActivo = 1;
+    }
+    ProcesarEntradaCampo(60, false);
+    if (formularioError)
+        DrawText(textoError.c_str(), 250, 420, 17, ROJO);
+    if (Boton(250, 465, 250, 55, "CREAR CUENTA CLIENTE")) {
+        if (campos[0].empty() || campos[1].empty()) {
+            formularioError = true; textoError = "Completa el nombre y la contrasena.";
+        }
+        else if (nUsuarios >= MAX) {
+            formularioError = true; textoError = "Se alcanzo el limite de usuarios.";
+        }
+        else {
+            Usuario u = { nUsuarios + 1, campos[0], "Cliente", true };
+            usuarios[nUsuarios] = u;
+            contrasenas[nUsuarios] = campos[1];
+            clienteActual = u.id;
+            nUsuarios++;
+            IrAPantalla(CLIENTE_MENU);
+            mensaje = "Cuenta creada. Tu ID de usuario es: " + to_string(u.id);
+        }
+    }
+    if (Boton(600, 465, 250, 55, "CREAR CUENTA COMERCIO")) {
+        if (campos[0].empty() || campos[1].empty()) {
+            formularioError = true; textoError = "Completa el nombre y la contrasena.";
+        }
+        else if (nUsuarios >= MAX || nComercios >= MAX) {
+            formularioError = true; textoError = "Se alcanzo el limite de registros.";
+        }
+        else {
+            Usuario u = { nUsuarios + 1, campos[0], "Comercio", true };
+            usuarios[nUsuarios] = u;
+            contrasenas[nUsuarios] = campos[1];
+            nUsuarios++;
+            LimpiarFormulario(3);
+            IrAPantalla(ADMIN_REGISTRAR_COMERCIO);
+            mensaje = "Completa los datos de tu comercio.";
+            comercioActual = u.id; // Durante el registro guarda temporalmente el id del usuario
+        }
+    }
+    if (Boton(400, 610, 300, 45, "VOLVER"))
+        IrAPantalla(PRINCIPAL);
+}
+void PantallaInicioSesion() {
+    DibujarMarcoContenido("INICIAR SESION");
+    DibujarTextoCentrado("Ingresa tu ID y contrasena", 145, 24, VERDE);
+    DibujarCampo(350, 235, 400, "ID de usuario", campos[0], campoActivo == 0);
+    DibujarCampo(350, 335, 400, "Contrasena", campos[1], campoActivo == 1);
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+        Vector2 m = GetMousePosition();
+        if (CheckCollisionPointRec(m, { 350, 235, 400, 48 })) campoActivo = 0;
+        if (CheckCollisionPointRec(m, { 350, 335, 400, 48 })) campoActivo = 1;
+    }
+    ProcesarEntradaCampo(60, false);
+    if (formularioError)
+        DrawText(textoError.c_str(), 300, 420, 17, ROJO);
+    if (Boton(350, 475, 190, 55, "INGRESAR")) {
+        int id = 0;
+        if (!ConvertirEntero(campos[0], id) || !iniciarSesionDatos(id, campos[1])) {
+            formularioError = true;
+            textoError = "ID o contrasena incorrectos, o cuenta inactiva.";
+        }
+        else {
+            int pos = buscarUsuarioPorID(id);
+            if (usuarios[pos].tipo == "Administrador") IrAPantalla(ADMINISTRADOR);
+            else if (usuarios[pos].tipo == "Cliente") {
+                clienteActual = id; IrAPantalla(CLIENTE_MENU);
+            }
+            else if (usuarios[pos].tipo == "Comercio") {
+                int pc = -1;
+                for (int i = 0; i < nComercios; i++)
+                    if (comercios[i].idUsuario == id && comercios[i].activo) pc = i;
+                if (pc == -1) {
+                    formularioError = true; textoError = "La cuenta no tiene un comercio registrado.";
+                }
+                else {
+                    comercioActual = comercios[pc].id;
+                    IrAPantalla(COMERCIO_MENU);
+                }
+            }
+        }
+    }
+    if (Boton(600, 475, 190, 55, "VOLVER"))
+        IrAPantalla(PRINCIPAL);
+}
+//Administrador
+void MenuAdministrador() {
+    ClearBackground(CREMA);
+    DibujarEncabezado("PANEL DEL ADMINISTRADOR");
+    DibujarTextoCentrado("Gestion del sistema", 125, 30, VERDE);
+
+    if (Boton(100, 200, 400, 60, "Ver comercios registrados")) IrAPantalla(ADMIN_COMERCIOS);
+    if (Boton(600, 200, 400, 60, "Ver todos los productos")) IrAPantalla(ADMIN_PRODUCTOS);
+    if (Boton(100, 285, 400, 60, "Registrar un comercio")) {
+        LimpiarFormulario(4);
+        comercioActual = -1;
+        IrAPantalla(ADMIN_REGISTRAR_COMERCIO);
+    }
+    if (Boton(600, 285, 400, 60, "Ver clientes registrados"))
+        IrAPantalla(ADMIN_CLIENTES);
+    if (Boton(100, 370, 400, 60, "Ver todas las reservas"))
+        IrAPantalla(ADMIN_RESERVAS);
+    if (Boton(600, 370, 400, 60, "Resumen del sistema"))
+        IrAPantalla(ADMIN_RESUMEN);
+    if (Boton(350, 455, 400, 60, "Reporte financiero"))
+        IrAPantalla(ADMIN_FINANZAS);
+    DibujarMensaje();
+    if (Boton(400, 610, 300, 50, "VOLVER"))
+        IrAPantalla(PRINCIPAL);
+}
+void PantallaComercios() {
+    DibujarMarcoContenido("COMERCIOS REGISTRADOS");
+    DrawText("ID", 55, 125, 17, VERDE);
+    DrawText("NOMBRE", 125, 125, 17, VERDE);
+    DrawText("DIRECCION", 535, 125, 17, VERDE);
+    DrawText("TELEFONO", 900, 125, 17, VERDE);
+    DrawLine(50, 152, 1050, 152, VERDE);
+    int y = 170; bool hay = false;
+    for (int i = 0; i < nComercios && y <= 585; i++) {
+        if (comercios[i].activo) {
+            hay = true;
+            DrawText(to_string(comercios[i].id).c_str(), 55, y, 16, GRIS);
+            DrawText(comercios[i].nombre.c_str(), 125, y, 16, GRIS);
+            DrawText(comercios[i].direccion.c_str(), 535, y, 16, GRIS);
+            DrawText(comercios[i].telefono.c_str(), 900, y, 16, GRIS);
+            y += 35;
+        }
+    }
+    if (!hay) DibujarTextoCentrado("No hay comercios registrados.", 250, 22, GRIS);
+    if (Boton(400, 615, 300, 50, "VOLVER")) VolverAdministrador();
+}
+void PantallaProductos() {
+    DibujarMarcoContenido("TODOS LOS PRODUCTOS");
+    DrawText("ID", 45, 125, 16, VERDE);
+    DrawText("PRODUCTO", 105, 125, 16, VERDE);
+    DrawText("COMERCIO", 365, 125, 16, VERDE);
+    DrawText("PRECIO", 640, 125, 16, VERDE);
+    DrawText("OFERTA", 775, 125, 16, VERDE);
+    DrawText("STOCK", 930, 125, 16, VERDE);
+    DrawLine(40, 152, 1060, 152, VERDE);
+    int y = 170; bool hay = false;
+    for (int i = 0; i < nProductos && y <= 585; i++) {
+        if (productos[i].activo) {
+            hay = true;
+            DrawText(to_string(productos[i].id).c_str(), 45, y, 15, GRIS);
+            DrawText(productos[i].nombre.c_str(), 105, y, 15, GRIS);
+            DrawText(TextoComercioPorID(productos[i].idComercio).c_str(), 365, y, 15, GRIS);
+            DrawText(TextFormat("Bs %.2f", productos[i].precioOriginal), 640, y, 15, GRIS);
+            DrawText(TextFormat("Bs %.2f", productos[i].precioOferta), 775, y, 15, GRIS);
+            DrawText(to_string(productos[i].stock).c_str(), 945, y, 15, GRIS);
+            y += 34;
+        }
+    }
+    if (!hay) DibujarTextoCentrado("No hay productos registrados.", 250, 22, GRIS);
+    if (Boton(400, 615, 300, 50, "VOLVER")) VolverAdministrador();
+}
+void PantallaRegistrarComercio() {
+    DibujarMarcoContenido("REGISTRAR UN COMERCIO");
+    DibujarTextoCentrado("Completa los datos del nuevo comercio", 125, 23, VERDE);
+    if (!mensaje.empty()) DrawText(mensaje.c_str(), 250, 155, 16, NARANJA);
+    DibujarCampo(250, 190, 600, "Nombre del comercio", campos[0], campoActivo == 0);
+    DibujarCampo(250, 275, 600, "Direccion", campos[1], campoActivo == 1);
+    DibujarCampo(250, 360, 600, "Telefono", campos[2], campoActivo == 2);
+    DibujarCampo(250, 445, 600, "Contrasena de acceso", campos[3], campoActivo == 3);
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+        Vector2 m = GetMousePosition();
+        if (CheckCollisionPointRec(m, { 250, 190, 600, 48 })) campoActivo = 0;
+        if (CheckCollisionPointRec(m, { 250, 275, 600, 48 })) campoActivo = 1;
+        if (CheckCollisionPointRec(m, { 250, 360, 600, 48 })) campoActivo = 2;
+        if (CheckCollisionPointRec(m, { 250, 445, 600, 48 })) campoActivo = 3;
+    }
+    ProcesarEntradaCampo(70, false);
+    DibujarErrorFormulario();
+    if (Boton(250, 555, 250, 55, "GUARDAR COMERCIO")) {
+        if (campos[0].empty() || campos[1].empty() || campos[2].empty() ||
+            (comercioActual <= 0 && campos[3].empty())) {
+            formularioError = true; textoError = "Completa todos los campos, incluida la contrasena.";
+        }
+        else if (nComercios >= MAX || nUsuarios >= MAX) {
+            formularioError = true; textoError = "No hay espacio para mas registros.";
+        }
+        else {
+            if (comercioActual > 0) {
+                // Registro iniciado desde el flujo antiguo: conserva la contrasena creada por el usuario.
+                int idUsuario = comercioActual;
+                Comercio c;
+                c.id = siguienteComercio++;
+                c.idUsuario = idUsuario;
+                c.nombre = campos[0];
+                c.direccion = campos[1];
+                c.telefono = campos[2];
+                c.activo = true;
+                comercios[nComercios++] = c;
+                comercioActual = c.id;
+                IrAPantalla(COMERCIO_MENU);
+                mensaje = "Cuenta y comercio registrados correctamente.";
+            }
+            else {
+                registrarComercioDatos(campos[0], campos[1], campos[2], campos[3]);
+                int idCreado = comercios[nComercios - 1].id;
+                IrAPantalla(ADMINISTRADOR);
+                mensaje = "Comercio creado. ID de acceso: " + to_string(idCreado) +
+                    " | Contrasena: " + campos[3];
+            }
+        }
+    }
+    if (Boton(600, 555, 250, 55, "CANCELAR")) VolverAdministrador();
+}
+void PantallaClientesAdmin() {
+    DibujarMarcoContenido("CLIENTES REGISTRADOS");
+    DrawText("ID", 160, 130, 18, VERDE);
+    DrawText("NOMBRE", 300, 130, 18, VERDE);
+    DrawLine(145, 158, 950, 158, VERDE);
+    int y = 180; bool hay = false;
+    for (int i = 0; i < nUsuarios && y <= 585; i++) {
+        if (usuarios[i].activo && usuarios[i].tipo == "Cliente") {
+            hay = true;
+            DrawText(to_string(usuarios[i].id).c_str(), 160, y, 18, GRIS);
+            DrawText(usuarios[i].nombre.c_str(), 300, y, 18, GRIS);
+            y += 36;
+        }
+    }
+    if (!hay)
+        DibujarTextoCentrado("No hay clientes registrados.", 250, 22, GRIS);
+    if (Boton(400, 615, 300, 50, "VOLVER"))
+        VolverAdministrador();
+}
+void PantallaReservasAdmin() {
+    DibujarMarcoContenido("TODAS LAS RESERVAS");
+    DrawText("ID", 35, 125, 15, VERDE);
+    DrawText("CLIENTE", 95, 125, 15, VERDE);
+    DrawText("PRODUCTO", 300, 125, 15, VERDE);
+    DrawText("CANT.", 570, 125, 15, VERDE);
+    DrawText("TOTAL", 665, 125, 15, VERDE);
+    DrawText("ESTADO", 825, 125, 15, VERDE);
+    DrawLine(30, 152, 1070, 152, VERDE);
+    int y = 170;
+    if (nReservas == 0) DibujarTextoCentrado("Todavia no hay reservas.", 250, 22, GRIS);
+    for (int i = 0; i < nReservas && y <= 585; i++) {
+        DrawText(to_string(reservas[i].id).c_str(), 35, y, 14, GRIS);
+        DrawText(TextoUsuarioPorID(reservas[i].idCliente).c_str(), 95, y, 14, GRIS);
+        DrawText(TextoProductoPorID(reservas[i].idProducto).c_str(), 300, y, 14, GRIS);
+        DrawText(to_string(reservas[i].cantidad).c_str(), 580, y, 14, GRIS);
+        DrawText(TextFormat("Bs %.2f", reservas[i].total), 665, y, 14, GRIS);
+        Color c = reservas[i].estado == "Completada" ? VERDE :
+            (reservas[i].estado == "Cancelada" ? ROJO : NARANJA);
+        DrawText(reservas[i].estado.c_str(), 825, y, 14, c);
+        y += 32;
+    }
+    if (Boton(400, 615, 300, 50, "VOLVER")) VolverAdministrador();
+}
+void PantallaResumen() {
+    DibujarMarcoContenido("RESUMEN DEL SISTEMA");
+    DibujarTextoCentrado("Estado general de RescateFood SCZ", 135, 25, VERDE);
+    const char* etiquetas[] = { "Comercios registrados", "Productos registrados",
+        "Usuarios registrados", "Reservas registradas" };
+    int valores[] = { nComercios, nProductos, nUsuarios, nReservas };
+    for (int i = 0; i < 4; i++) {
+        int x = (i % 2 == 0) ? 150 : 590;
+        int y = (i < 2) ? 220 : 390;
+        Rectangle r = { (float)x, (float)y, 360, 115 };
+        DrawRectangleRounded(r, 0.12f, 8, BLANCO);
+        DrawRectangleRoundedLines(r, 0.12f, 8, VERDE);
+        DrawText(etiquetas[i], x + 22, y + 20, 19, GRIS);
+        DrawText(to_string(valores[i]).c_str(), x + 22, y + 55, 36, VERDE);
+    }
+    if (Boton(400, 615, 300, 50, "VOLVER")) VolverAdministrador();
+}
+void PantallaFinanzas() {
+    DibujarMarcoContenido("REPORTE FINANCIERO");
+    int pendientes = 0, completadas = 0, canceladas = 0;
+    int unidadesVendidas = 0, productosActivos = 0, unidadesRescatadas = 0;
+    double ahorro = 0.0, ingresos = 0.0;
+    int mayorCantidad = 0;
+    string productoMasVendido = "Todavia no hay ventas";
+
+    for (int i = 0; i < nReservas; i++) {
+        if (reservas[i].estado == "Pendiente") pendientes++;
+        else if (reservas[i].estado == "Completada") {
+            completadas++;
+            unidadesVendidas += reservas[i].cantidad;
+            ingresos += reservas[i].total;
+            int pos = buscarProductoPorID(reservas[i].idProducto);
+            if (pos != -1) {
+                ahorro += calcularDescuento(productos[pos].precioOriginal,
+                    productos[pos].precioOferta) * reservas[i].cantidad;
+            }
+        }
+        else if (reservas[i].estado == "Cancelada") canceladas++;
+    }
+    for (int i = 0; i < nProductos; i++) {
+        if (productos[i].activo) productosActivos++;
+        int unidades = 0;
+        for (int j = 0; j < nReservas; j++) {
+            if (reservas[j].idProducto == productos[i].id &&
+                reservas[j].estado == "Completada")
+                unidades += reservas[j].cantidad;
+        }
+        unidadesRescatadas += unidades;
+        if (unidades > mayorCantidad) {
+            mayorCantidad = unidades;
+            productoMasVendido = productos[i].nombre;
+        }
+    }
+    DibujarTextoCentrado("VENTAS Y RESERVAS", 120, 22, VERDE);
+    DrawText(TextFormat("Reservas pendientes: %d", pendientes), 90, 165, 19, GRIS);
+    DrawText(TextFormat("Reservas completadas: %d", completadas), 390, 165, 19, GRIS);
+    DrawText(TextFormat("Reservas canceladas: %d", canceladas), 700, 165, 19, GRIS);
+    DrawText(TextFormat("Unidades vendidas: %d", unidadesVendidas), 90, 205, 19, GRIS);
+    DrawText(TextFormat("Ingresos totales: Bs %.2f", ingresos), 390, 205, 19, VERDE);
+    DrawLine(75, 250, 1025, 250, VERDE);
+    DibujarTextoCentrado("DESCUENTOS Y ALIMENTOS RESCATADOS", 275, 22, VERDE);
+    DrawText(TextFormat("Ahorro generado para clientes: Bs %.2f", ahorro), 90, 325, 19, GRIS);
+    DrawText(TextFormat("Productos activos publicados: %d", productosActivos), 90, 365, 19, GRIS);
+    DrawText(TextFormat("Unidades de alimentos rescatadas: %d", unidadesRescatadas), 90, 405, 19, GRIS);
+    string etiquetaTop = "Producto con mas unidades vendidas: " + productoMasVendido;
+    DrawText(etiquetaTop.c_str(), 90, 445, 19, GRIS);
+    DrawText(TextFormat("Comercios registrados: %d | Usuarios: %d | Productos: %d",
+        nComercios, nUsuarios, nProductos), 90, 500, 18, GRIS);
+    if (Boton(400, 615, 300, 50, "VOLVER"))
+        VolverAdministrador();
+}
+//Comercio
+void PantallaAccesoComercio() {
+    DibujarMarcoContenido("ACCESO DE COMERCIO");
+    DibujarTextoCentrado("Ingresa el ID de tu comercio y su contrasena", 125, 22, VERDE);
+    DibujarCampo(350, 205, 400, "ID del comercio", campos[0], campoActivo == 0);
+    DibujarCampo(350, 290, 400, "Contrasena", campos[1], campoActivo == 1);
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+        Vector2 m = GetMousePosition();
+        if (CheckCollisionPointRec(m, { 350, 205, 400, 48 })) campoActivo = 0;
+        if (CheckCollisionPointRec(m, { 350, 290, 400, 48 })) campoActivo = 1;
+    }
+    ProcesarEntradaCampo(60, false);
+    DrawText("Consulta el ID asignado por el administrador:", 250, 370, 17, GRIS);
+    int y = 400;
+    for (int i = 0; i < nComercios && y < 535; i++) {
+        if (comercios[i].activo) {
+            DrawText(TextFormat("ID %d - %s", comercios[i].id, comercios[i].nombre.c_str()), 270, y, 16, GRIS);
+            y += 25;
+        }
+    }
+    if (formularioError) DrawText(textoError.c_str(), 300, 555, 17, ROJO);
+    if (Boton(250, 600, 250, 50, "INGRESAR")) {
+        int id;
+        int posComercio = ConvertirEntero(campos[0], id) ? buscarComercioPorID(id) : -1;
+        if (posComercio == -1 || !iniciarSesionDatos(comercios[posComercio].idUsuario, campos[1])) {
+            formularioError = true;
+            textoError = "ID de comercio o contrasena incorrectos.";
+        }
+        else {
+            comercioActual = comercios[posComercio].id;
+            IrAPantalla(COMERCIO_MENU);
+        }
+    }
+    if (Boton(600, 600, 250, 50, "VOLVER")) {
+        LimpiarFormulario(2);
+        IrAPantalla(PRINCIPAL);
+    }
+}
+void MenuComercio() {
+    ClearBackground(CREMA);
+    DibujarEncabezado("PANEL DEL COMERCIO");
+    DibujarTextoCentrado("Gestion de tu comercio", 125, 30, VERDE);
+    DrawText(TextoComercioPorID(comercioActual).c_str(), 390, 165, 20, GRIS);
+    int posDatosComercio = buscarComercioPorID(comercioActual);
+    if (posDatosComercio != -1) {
+        DrawText(TextFormat("Direccion: %s | Telefono: %s",
+            comercios[posDatosComercio].direccion.c_str(),
+            comercios[posDatosComercio].telefono.c_str()), 250, 190, 17, GRIS);
+    }
+    DrawText(TextFormat("Ingresos por ventas completadas: Bs %.2f",
+        calcularIngresosComercio(comercioActual)), 300, 215, 18, VERDE);
+    DibujarMensaje();
+    if (Boton(350, 255, 400, 50, "Ver mis productos")) {
+        IrAPantalla(COMERCIO_PRODUCTOS);
+    }
+    if (Boton(350, 315, 400, 50, "Publicar producto")) {
+        LimpiarFormulario(4);
+        IrAPantalla(COMERCIO_PUBLICAR);
+    }
+    if (Boton(350, 375, 400, 50, "Actualizar stock")) {
+        LimpiarFormulario(2);
+        IrAPantalla(COMERCIO_STOCK);
+    }
+    if (Boton(350, 435, 400, 50, "Ver reservas recibidas")) {
+        IrAPantalla(COMERCIO_RESERVAS);
+    }
+    if (Boton(350, 495, 400, 50, "Completar una reserva")) {
+        LimpiarFormulario(1);
+        IrAPantalla(COMERCIO_COMPLETAR);
+    }
+    if (Boton(400, 625, 300, 45, "VOLVER")) {
+        comercioActual = -1;
+        IrAPantalla(PRINCIPAL);
+    }
+}
+void PantallaProductosComercio() {
+    DibujarMarcoContenido("MIS PRODUCTOS");
+    DrawText(TextoComercioPorID(comercioActual).c_str(), 70, 115, 18, VERDE);
+    DrawText("ID", 70, 155, 16, VERDE);
+    DrawText("PRODUCTO", 150, 155, 16, VERDE);
+    DrawText("PRECIO ORIGINAL", 500, 155, 16, VERDE);
+    DrawText("OFERTA", 700, 155, 16, VERDE);
+    DrawText("STOCK", 850, 155, 16, VERDE);
+    DrawLine(60, 180, 1040, 180, VERDE);
+    int y = 195; bool hay = false;
+    for (int i = 0; i < nProductos && y <= 575; i++) {
+        if (productos[i].activo && productos[i].idComercio == comercioActual) {
+            hay = true;
+            DrawText(to_string(productos[i].id).c_str(), 70, y, 16, GRIS);
+            DrawText(productos[i].nombre.c_str(), 150, y, 16, GRIS);
+            DrawText(TextFormat("Bs %.2f", productos[i].precioOriginal), 500, y, 16, GRIS);
+            DrawText(TextFormat("Bs %.2f", productos[i].precioOferta), 700, y, 16, GRIS);
+            DrawText(to_string(productos[i].stock).c_str(), 870, y, 16, GRIS);
+            y += 34;
+        }
+    }
+    if (!hay) DibujarTextoCentrado("Este comercio aun no tiene productos.", 270, 21, GRIS);
+    if (Boton(400, 615, 300, 50, "VOLVER")) VolverComercio();
+}
+void PantallaPublicarProducto() {
+    DibujarMarcoContenido("PUBLICAR PRODUCTO");
+    DibujarTextoCentrado("Ingresa los datos del producto", 125, 23, VERDE);
+    DibujarCampo(250, 195, 600, "Nombre del producto", campos[0], campoActivo == 0);
+    DibujarCampo(250, 280, 600, "Precio original (Bs)", campos[1], campoActivo == 1);
+    DibujarCampo(250, 365, 600, "Precio de oferta (Bs)", campos[2], campoActivo == 2);
+    DibujarCampo(250, 450, 600, "Cantidad disponible", campos[3], campoActivo == 3);
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+        Vector2 m = GetMousePosition();
+        if (CheckCollisionPointRec(m, { 250, 195, 600, 48 })) campoActivo = 0;
+        if (CheckCollisionPointRec(m, { 250, 280, 600, 48 })) campoActivo = 1;
+        if (CheckCollisionPointRec(m, { 250, 365, 600, 48 })) campoActivo = 2;
+        if (CheckCollisionPointRec(m, { 250, 450, 600, 48 })) campoActivo = 3;
+    }
+    ProcesarEntradaCampo(70, campoActivo >= 1 && campoActivo <= 3);
+    DibujarErrorFormulario();
+    if (Boton(250, 570, 250, 50, "PUBLICAR")) {
+        double original, oferta; int stock;
+        if (campos[0].empty() || !ConvertirDecimal(campos[1], original) ||
+            !ConvertirDecimal(campos[2], oferta) || !ConvertirEntero(campos[3], stock)) {
+            formularioError = true; textoError = "Verifica que todos los campos tengan datos validos.";
+        }
+        else if (!publicarProductoDatos(comercioActual, campos[0], original, oferta, stock)) {
+            formularioError = true; textoError = "Datos invalidos o limite de productos alcanzado.";
+        }
+        else {
+            IrAPantalla(COMERCIO_MENU);
+            mensaje = "Producto publicado correctamente.";
+        }
+    }
+    if (Boton(600, 570, 250, 50, "CANCELAR")) VolverComercio();
+}
+void PantallaActualizarStock() {
+    DibujarMarcoContenido("ACTUALIZAR STOCK");
+    DibujarTextoCentrado("Introduce el ID del producto y el nuevo stock", 135, 22, VERDE);
+    DrawText("Productos de este comercio:", 230, 185, 18, GRIS);
+    int y = 220;
+    for (int i = 0; i < nProductos && y < 330; i++) {
+        if (productos[i].activo && productos[i].idComercio == comercioActual) {
+            DrawText(TextFormat("ID %d - %s (stock: %d)", productos[i].id,
+                productos[i].nombre.c_str(), productos[i].stock), 250, y, 17, GRIS);
+            y += 27;
+        }
+    }
+    DibujarCampo(250, 390, 280, "ID del producto", campos[0], campoActivo == 0);
+    DibujarCampo(570, 390, 280, "Nuevo stock", campos[1], campoActivo == 1);
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+        Vector2 m = GetMousePosition();
+        if (CheckCollisionPointRec(m, { 250, 390, 280, 48 })) campoActivo = 0;
+        if (CheckCollisionPointRec(m, { 570, 390, 280, 48 })) campoActivo = 1;
+    }
+    ProcesarEntradaCampo(10, true);
+    DibujarErrorFormulario();
+    if (Boton(250, 555, 250, 50, "ACTUALIZAR")) {
+        int id, stock;
+        if (!ConvertirEntero(campos[0], id) || !ConvertirEntero(campos[1], stock)) {
+            formularioError = true; textoError = "Ingresa un ID y una cantidad validos.";
+        }
+        else if (!actualizarStockDatos(comercioActual, id, stock)) {
+            formularioError = true; textoError = "Producto no encontrado o stock negativo.";
+        }
+        else {
+            IrAPantalla(COMERCIO_MENU); mensaje = "Stock actualizado correctamente.";
+        }
+    }
+    if (Boton(600, 555, 250, 50, "CANCELAR")) VolverComercio();
+}
+void PantallaReservasComercio() {
+    DibujarMarcoContenido("RESERVAS RECIBIDAS");
+    DrawText("ID", 55, 135, 15, VERDE);
+    DrawText("CLIENTE", 145, 135, 15, VERDE);
+    DrawText("PRODUCTO", 390, 135, 15, VERDE);
+    DrawText("CANT.", 650, 135, 15, VERDE);
+    DrawText("TOTAL", 745, 135, 15, VERDE);
+    DrawText("ESTADO", 880, 135, 15, VERDE);
+    DrawLine(45, 160, 1055, 160, VERDE);
+    int y = 180; bool hay = false;
+    for (int i = 0; i < nReservas && y <= 585; i++) {
+        int pos = buscarProductoPorID(reservas[i].idProducto);
+        if (pos != -1 && productos[pos].idComercio == comercioActual) {
+            hay = true;
+            DrawText(to_string(reservas[i].id).c_str(), 55, y, 14, GRIS);
+            DrawText(TextoUsuarioPorID(reservas[i].idCliente).c_str(), 145, y, 14, GRIS);
+            DrawText(productos[pos].nombre.c_str(), 390, y, 14, GRIS);
+            DrawText(to_string(reservas[i].cantidad).c_str(), 660, y, 14, GRIS);
+            DrawText(TextFormat("Bs %.2f", reservas[i].total), 745, y, 14, GRIS);
+            Color c = reservas[i].estado == "Completada" ? VERDE :
+                (reservas[i].estado == "Cancelada" ? ROJO : NARANJA);
+            DrawText(reservas[i].estado.c_str(), 880, y, 14, c);
+            y += 32;
+        }
+    }
+    if (!hay)
+        DibujarTextoCentrado("Este comercio todavia no tiene reservas.", 260, 21, GRIS);
+    if (Boton(400, 615, 300, 50, "VOLVER"))
+        VolverComercio();
+}
+void PantallaCompletarReserva() {
+    DibujarMarcoContenido("COMPLETAR RESERVA");
+    DibujarTextoCentrado("Escribe el codigo de la reserva pendiente", 145, 22, VERDE);
+    DibujarCampo(350, 270, 400, "ID de la reserva", campos[0], campoActivo == 0);
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+        Vector2 m = GetMousePosition();
+        if (CheckCollisionPointRec(m, { 350, 270, 400, 48 })) campoActivo = 0;
+    }
+    ProcesarEntradaCampo(10, true);
+    if (formularioError) DrawText(textoError.c_str(), 300, 365, 17, ROJO);
+    if (Boton(250, 500, 250, 55, "COMPLETAR")) {
+        int id;
+        if (!ConvertirEntero(campos[0], id)) {
+            formularioError = true; textoError = "Ingresa un ID valido.";
+        }
+        else if (!completarReservaDatos(comercioActual, id)) {
+            formularioError = true; textoError = "No existe una reserva pendiente de este comercio con ese ID.";
+        }
+        else {
+            VolverComercio(); mensaje = "Reserva marcada como completada.";
+        }
+    }
+    if (Boton(600, 500, 250, 55, "CANCELAR")) VolverComercio();
+}
+//Cliente
+void PantallaAccesoCliente() {
+    DibujarMarcoContenido("ACCESO DE CLIENTE");
+    DibujarTextoCentrado("Elige como deseas ingresar", 145, 24, VERDE);
+    if (Boton(350, 210, 400, 55, "Registrar nuevo cliente")) {
+        LimpiarFormulario(2); IrAPantalla(CLIENTE_REGISTRAR);
+    }
+    if (Boton(350, 285, 400, 55, "Continuar con cliente registrado")) {
+        LimpiarFormulario(2);
+        mensaje = "Ingresa tu ID y contrasena para continuar.";
+    }
+    if (!mensaje.empty()) {
+        DrawText(mensaje.c_str(), 250, 365, 17, NARANJA);
+        DibujarCampo(350, 410, 400, "ID del cliente", campos[0], campoActivo == 0);
+        DibujarCampo(350, 485, 400, "Contrasena", campos[1], campoActivo == 1);
+        if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+            Vector2 m = GetMousePosition();
+            if (CheckCollisionPointRec(m, { 350, 410, 400, 48 })) campoActivo = 0;
+            if (CheckCollisionPointRec(m, { 350, 485, 400, 48 })) campoActivo = 1;
+        }
+        ProcesarEntradaCampo(60, false);
+        if (formularioError) DrawText(textoError.c_str(), 300, 550, 17, ROJO);
+        if (Boton(350, 570, 190, 45, "INGRESAR")) {
+            int id;
+            int pos = ConvertirEntero(campos[0], id) ? buscarUsuarioPorID(id) : -1;
+            if (pos != -1 && usuarios[pos].activo && usuarios[pos].tipo == "Cliente" && iniciarSesionDatos(id, campos[1])) {
+                clienteActual = id;
+                IrAPantalla(CLIENTE_MENU);
+            }
+            else {
+                formularioError = true;
+                textoError = "ID o contrasena incorrectos.";
+            }
+        }
+    }
+    if (Boton(400, 635, 300, 40, "VOLVER")) {
+        LimpiarFormulario(1);
+        IrAPantalla(PRINCIPAL);
+    }
+}
+void PantallaRegistrarCliente() {
+    DibujarMarcoContenido("REGISTRAR CLIENTE");
+    DibujarTextoCentrado("Ingresa tu nombre y crea una contrasena", 155, 23, VERDE);
+    DibujarCampo(250, 245, 600, "Nombre completo", campos[0], campoActivo == 0);
+    DibujarCampo(250, 335, 600, "Contrasena", campos[1], campoActivo == 1);
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+        Vector2 m = GetMousePosition();
+        if (CheckCollisionPointRec(m, { 250, 245, 600, 48 })) campoActivo = 0;
+        if (CheckCollisionPointRec(m, { 250, 335, 600, 48 })) campoActivo = 1;
+    }
+    ProcesarEntradaCampo(60, false);
+    if (formularioError) DrawText(textoError.c_str(), 300, 415, 17, ROJO);
+    if (Boton(250, 470, 250, 55, "REGISTRAR")) {
+        if (campos[0].empty() || campos[1].empty() || nUsuarios >= MAX) {
+            formularioError = true;
+            if (nUsuarios >= MAX) textoError = "No hay espacio para mas usuarios.";
+            else textoError = "Completa tu nombre y contrasena.";
+        }
+        else {
+            registrarClienteDatos(campos[0], campos[1]);
+            clienteActual = usuarios[nUsuarios - 1].id;
+            int idRegistrado = clienteActual;
+            IrAPantalla(CLIENTE_MENU);
+            mensaje = "Cuenta creada. Tu ID de cliente es: " + to_string(idRegistrado);
+        }
+    }
+    if (Boton(600, 470, 250, 55, "CANCELAR")) {
+        LimpiarFormulario(2);
+        IrAPantalla(CLIENTE_ACCESO);
+    }
+}
+void MenuCliente() {
+    ClearBackground(CREMA);
+    DibujarEncabezado("PANEL DEL CLIENTE");
+    DibujarTextoCentrado("Bienvenido al catalogo de alimentos", 125, 28, VERDE);
+    DrawText(TextoUsuarioPorID(clienteActual).c_str(), 410, 165, 19, GRIS);
+    DibujarMensaje();
+    if (Boton(350, 210, 400, 52, "Ver productos disponibles")) IrAPantalla(CLIENTE_PRODUCTOS);
+    if (Boton(350, 275, 400, 52, "Buscar producto por ID")) {
+        LimpiarFormulario(1); IrAPantalla(CLIENTE_BUSCAR);
+    }
+    if (Boton(350, 340, 400, 52, "Realizar una reserva")) {
+        LimpiarFormulario(2); IrAPantalla(CLIENTE_RESERVAR);
+    }
+    if (Boton(350, 405, 400, 52, "Ver mis reservas")) IrAPantalla(CLIENTE_RESERVAS);
+    if (Boton(350, 470, 400, 52, "Cancelar una reserva")) {
+        LimpiarFormulario(1); IrAPantalla(CLIENTE_CANCELAR);
+    }
+    DrawText(TextFormat("Ahorro acumulado: Bs %.2f", calcularAhorroCliente(clienteActual)), 390, 545, 18, VERDE);
+    if (Boton(400, 620, 300, 50, "CERRAR SESION")) {
+        clienteActual = -1; IrAPantalla(PRINCIPAL);
+    }
+}
+void PantallaProductosCliente() {
+    DibujarMarcoContenido("PRODUCTOS DISPONIBLES");
+    DrawText("ID", 55, 135, 16, VERDE);
+    DrawText("PRODUCTO", 135, 135, 16, VERDE);
+    DrawText("COMERCIO", 430, 135, 16, VERDE);
+    DrawText("PRECIO ANTES", 700, 135, 16, VERDE);
+    DrawText("OFERTA", 840, 135, 16, VERDE);
+    DrawText("STOCK", 960, 135, 16, VERDE);
+    DrawLine(45, 160, 1055, 160, VERDE);
+    int y = 180; bool hay = false;
+    for (int i = 0; i < nProductos && y <= 585; i++) {
+        if (productos[i].activo && productos[i].stock > 0) {
+            hay = true;
+            DrawText(to_string(productos[i].id).c_str(), 55, y, 15, GRIS);
+            DrawText(productos[i].nombre.c_str(), 135, y, 15, GRIS);
+            DrawText(TextoComercioPorID(productos[i].idComercio).c_str(), 430, y, 15, GRIS);
+            DrawText(TextFormat("%.2f", productos[i].precioOriginal), 710, y, 15, GRIS);
+            DrawText(TextFormat("%.2f", productos[i].precioOferta), 850, y, 15, VERDE);
+            DrawText(to_string(productos[i].stock).c_str(), 970, y, 15, GRIS);
+            y += 34;
+        }
+    }
+    if (!hay) DibujarTextoCentrado("No hay productos disponibles.", 270, 21, GRIS);
+    if (Boton(400, 615, 300, 50, "VOLVER")) VolverCliente();
+}
+void PantallaBuscarProducto() {
+    DibujarMarcoContenido("BUSCAR PRODUCTO");
+    DibujarTextoCentrado("Escribe el ID del producto que deseas consultar", 150, 22, VERDE);
+    DibujarCampo(350, 245, 400, "ID del producto", campos[0], campoActivo == 0);
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+        Vector2 m = GetMousePosition();
+        if (CheckCollisionPointRec(m, { 350, 245, 400, 48 })) campoActivo = 0;
+    }
+    ProcesarEntradaCampo(10, true);
+
+    if (!mensaje.empty()) DrawText(mensaje.c_str(), 180, 360, 18, NARANJA);
+    if (Boton(350, 420, 190, 50, "BUSCAR")) {
+        int id = 0;
+        if (!ConvertirEntero(campos[0], id)) {
+            mensaje = "Ingresa un ID numerico valido.";
+        }
+        else {
+            int pos = buscarProductoPorID(id);
+            if (pos == -1 || !productos[pos].activo || productos[pos].stock <= 0) {
+                mensaje = "Producto no disponible o no encontrado.";
+            }
+            else {
+                mensaje = "Encontrado: " + productos[pos].nombre +
+                    " | Oferta: Bs " + to_string(productos[pos].precioOferta) +
+                    " | Stock: " + to_string(productos[pos].stock);
+            }
+        }
+    }
+    if (Boton(600, 420, 190, 50, "VOLVER")) VolverCliente();
+}
+void PantallaRealizarReserva() {
+    DibujarMarcoContenido("REALIZAR UNA RESERVA");
+    DibujarTextoCentrado("Selecciona un producto disponible", 120, 22, VERDE);
+    DrawText("ID", 80, 165, 15, VERDE);
+    DrawText("PRODUCTO", 180, 165, 15, VERDE);
+    DrawText("PRECIO OFERTA", 590, 165, 15, VERDE);
+    DrawText("STOCK", 820, 165, 15, VERDE);
+    DrawLine(70, 190, 1030, 190, VERDE);
+    int y = 205;
+    for (int i = 0; i < nProductos && y <= 365; i++) {
+        if (productos[i].activo && productos[i].stock > 0) {
+            DrawText(to_string(productos[i].id).c_str(), 80, y, 15, GRIS);
+            DrawText(productos[i].nombre.c_str(), 180, y, 15, GRIS);
+            DrawText(TextFormat("Bs %.2f", productos[i].precioOferta), 590, y, 15, GRIS);
+            DrawText(to_string(productos[i].stock).c_str(), 830, y, 15, GRIS);
+            y += 27;
+        }
+    }
+    DibujarCampo(250, 440, 280, "ID del producto", campos[0], campoActivo == 0);
+    DibujarCampo(570, 440, 280, "Cantidad", campos[1], campoActivo == 1);
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+        Vector2 m = GetMousePosition();
+        if (CheckCollisionPointRec(m, { 250, 440, 280, 48 })) campoActivo = 0;
+        if (CheckCollisionPointRec(m, { 570, 440, 280, 48 })) campoActivo = 1;
+    }
+    ProcesarEntradaCampo(10, true);
+    if (formularioError) DrawText(textoError.c_str(), 250, 520, 17, ROJO);
+    if (Boton(250, 565, 250, 50, "CONFIRMAR RESERVA")) {
+        int id, cantidad;
+        if (!ConvertirEntero(campos[0], id) || !ConvertirEntero(campos[1], cantidad)) {
+            formularioError = true; textoError = "Ingresa un ID y una cantidad validos.";
+        }
+        else if (!realizarReservaDatos(clienteActual, id, cantidad)) {
+            formularioError = true; textoError = "No se pudo reservar: revisa producto, cantidad y stock.";
+        }
+        else {
+            VolverCliente(); mensaje = "Reserva creada correctamente.";
+        }
+    }
+    if (Boton(600, 565, 250, 50, "CANCELAR")) VolverCliente();
+}
+void PantallaMisReservas() {
+    DibujarMarcoContenido("MIS RESERVAS");
+    DrawText("ID", 75, 145, 16, VERDE);
+    DrawText("PRODUCTO", 190, 145, 16, VERDE);
+    DrawText("CANT.", 570, 145, 16, VERDE);
+    DrawText("TOTAL", 680, 145, 16, VERDE);
+    DrawText("ESTADO", 835, 145, 16, VERDE);
+    DrawLine(65, 170, 1035, 170, VERDE);
+    int y = 190; bool hay = false;
+    for (int i = 0; i < nReservas && y <= 585; i++) {
+        if (reservas[i].idCliente == clienteActual) {
+            hay = true;
+            DrawText(to_string(reservas[i].id).c_str(), 75, y, 15, GRIS);
+            DrawText(TextoProductoPorID(reservas[i].idProducto).c_str(), 190, y, 15, GRIS);
+            DrawText(to_string(reservas[i].cantidad).c_str(), 580, y, 15, GRIS);
+            DrawText(TextFormat("Bs %.2f", reservas[i].total), 680, y, 15, GRIS);
+            Color c = reservas[i].estado == "Completada" ? VERDE :
+                (reservas[i].estado == "Cancelada" ? ROJO : NARANJA);
+            DrawText(reservas[i].estado.c_str(), 835, y, 15, c);
+            y += 34;
+        }
+    }
+    if (!hay)
+        DibujarTextoCentrado("Todavia no tienes reservas.", 270, 21, GRIS);
+    if (Boton(400, 615, 300, 50, "VOLVER"))
+        VolverCliente();
+}
+void PantallaCancelarReserva() {
+    DibujarMarcoContenido("CANCELAR UNA RESERVA");
+    DibujarTextoCentrado("Reservas pendientes de este cliente", 130, 22, VERDE);
+    int y = 185; bool hay = false;
+    for (int i = 0; i < nReservas && y <= 365; i++) {
+        if (reservas[i].idCliente == clienteActual && reservas[i].estado == "Pendiente") {
+            hay = true;
+            DrawText(TextFormat("Reserva %d - %s - Bs %.2f", reservas[i].id,
+                TextoProductoPorID(reservas[i].idProducto).c_str(), reservas[i].total),
+                200, y, 17, GRIS);
+            y += 30;
+        }
+    }
+    if (!hay) DibujarTextoCentrado("No tienes reservas pendientes para cancelar.", 230, 19, GRIS);
+    DibujarCampo(350, 420, 400, "ID de la reserva", campos[0], campoActivo == 0);
+    if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
+        Vector2 m = GetMousePosition();
+        if (CheckCollisionPointRec(m, { 350, 420, 400, 48 })) campoActivo = 0;
+    }
+    ProcesarEntradaCampo(10, true);
+    if (formularioError) DrawText(textoError.c_str(), 300, 495, 17, ROJO);
+    if (Boton(250, 545, 250, 50, "CANCELAR RESERVA")) {
+        int id;
+        if (!ConvertirEntero(campos[0], id)) {
+            formularioError = true; textoError = "Ingresa un ID valido.";
+        }
+        else if (!cancelarReservaDatos(clienteActual, id)) {
+            formularioError = true; textoError = "No se encontro una reserva pendiente de este cliente.";
+        }
+        else {
+            VolverCliente(); mensaje = "Reserva cancelada y stock devuelto.";
+        }
+    }
+    if (Boton(600, 545, 250, 50, "VOLVER")) VolverCliente();
+}
+//Funciones de datos y reglas del negiocio
+int buscarUsuarioPorID(int id) {
+    for (int i = 0; i < nUsuarios; i++)
+        if (usuarios[i].id == id) return i;
+    return -1;
+}
+void inicializarAdministrador() {
+    if (nUsuarios >= MAX) return;
+    usuarios[nUsuarios] = { 1, "Administrador", "Administrador", true };
+    contrasenas[nUsuarios] = "admin123";
+    nUsuarios++;
+}
+bool iniciarSesionDatos(int id, const string& contrasena) {
+    int pos = buscarUsuarioPorID(id);
+    return pos != -1 && usuarios[pos].activo && contrasenas[pos] == contrasena;
+}
+int buscarProductoPorID(int id) {
+    for (int i = 0; i < nProductos; i++)
+        if (productos[i].id == id && productos[i].activo) return i;
+    return -1;
+}
+int buscarComercioPorID(int id) {
+    for (int i = 0; i < nComercios; i++)
+        if (comercios[i].id == id && comercios[i].activo) return i;
+    return -1;
+}
+void registrarComercioDatos(const string& nombre, const string& direccion, const string& telefono, const string& contrasena) {
+    if (nComercios >= MAX || nUsuarios >= MAX) return;
+    Comercio c;
+    c.id = siguienteComercio++;
+    c.idUsuario = nUsuarios + 1;
+    c.nombre = nombre;
+    c.direccion = direccion;
+    c.telefono = telefono;
+    c.activo = true;
+    comercios[nComercios++] = c;
+    usuarios[nUsuarios] = { c.idUsuario, c.nombre, "Comercio", true };
+    contrasenas[nUsuarios] = contrasena;
+    nUsuarios++;
+}
+void registrarClienteDatos(const string& nombre, const string& contrasena) {
+    if (nUsuarios >= MAX) return;
+    Usuario u;
+    u.id = nUsuarios + 1;
+    u.nombre = nombre;
+    u.tipo = "Cliente";
+    u.activo = true;
+    usuarios[nUsuarios] = u;
+    contrasenas[nUsuarios] = contrasena;
+    nUsuarios++;
+}
+bool publicarProductoDatos(int idComercio, const string& nombre,
+    double original, double oferta, int stock) {
+    if (nProductos >= MAX) return false;
+    if (buscarComercioPorID(idComercio) == -1) return false;
+    if (nombre.empty() || original <= 0 || oferta <= 0 ||
+        oferta >= original || stock <= 0) return false;
+    Producto p;
+    p.id = siguienteProducto++;
+    p.idComercio = idComercio;
+    p.nombre = nombre;
+    p.precioOriginal = original;
+    p.precioOferta = oferta;
+    p.stock = stock;
+    p.activo = true;
+    productos[nProductos++] = p;
+    return true;
+}
+bool actualizarStockDatos(int idComercio, int idProducto, int cantidad) {
+    int pos = buscarProductoPorID(idProducto);
+    if (pos == -1 || productos[pos].idComercio != idComercio || cantidad < 0)
+        return false;
+    productos[pos].stock = cantidad;
+    return true;
+}
+bool realizarReservaDatos(int idCliente, int idProducto, int cantidad) {
+    if (nReservas >= MAX) return false;
+    bool clienteValido = false;
+    for (int i = 0; i < nUsuarios; i++)
+        if (usuarios[i].id == idCliente && usuarios[i].tipo == "Cliente" && usuarios[i].activo)
+            clienteValido = true;
+    if (!clienteValido) return false;
+    int pos = buscarProductoPorID(idProducto);
+    if (pos == -1) return false;
+    if (cantidad <= 0 || cantidad > productos[pos].stock) return false;
+    Reserva r;
+    r.id = siguienteReserva++;
+    r.idCliente = idCliente;
+    r.idProducto = idProducto;
+    r.cantidad = cantidad;
+    r.total = productos[pos].precioOferta * cantidad;
+    r.estado = "Pendiente";
+    reservas[nReservas++] = r;
+    productos[pos].stock -= cantidad;
+    return true;
+}
+bool cancelarReservaDatos(int idCliente, int idReserva) {
+    for (int i = 0; i < nReservas; i++) {
+        if (reservas[i].id == idReserva && reservas[i].idCliente == idCliente) {
+            if (reservas[i].estado != "Pendiente") return false;
+            int pos = buscarProductoPorID(reservas[i].idProducto);
+            if (pos != -1) productos[pos].stock += reservas[i].cantidad;
+            reservas[i].estado = "Cancelada";
+            return true;
+        }
+    }
+    return false;
+}
+bool completarReservaDatos(int idComercio, int idReserva) {
+    for (int i = 0; i < nReservas; i++) {
+        if (reservas[i].id == idReserva) {
+            int pos = buscarProductoPorID(reservas[i].idProducto);
+            if (pos == -1 || productos[pos].idComercio != idComercio) continue;
+            if (reservas[i].estado != "Pendiente") return false;
+            reservas[i].estado = "Completada";
+            return true;
+        }
+    }
+    return false;
+}
+double calcularDescuento(double original, double oferta) {
+    if (original <= 0 || oferta < 0 || oferta > original) return 0;
+    return original - oferta;
+}
+double calcularPorcentajeDescuento(double original, double oferta) {
+    if (original <= 0 || oferta < 0 || oferta > original) return 0;
+    return ((original - oferta) / original) * 100;
+}
+double calcularTotalReserva(double precio, int cantidad) {
+    if (precio < 0 || cantidad < 0) return 0;
+    return precio * cantidad;
+}
+double calcularAhorroCliente(int idCliente) {
+    double ahorro = 0;
+    for (int i = 0; i < nReservas; i++) {
+        if (reservas[i].idCliente == idCliente && reservas[i].estado == "Completada") {
+            int pos = buscarProductoPorID(reservas[i].idProducto);
+            if (pos != -1)
+                ahorro += calcularDescuento(productos[pos].precioOriginal,
+                    productos[pos].precioOferta) * reservas[i].cantidad;
+        }
+    }
+    return ahorro;
+}
+double calcularIngresosComercio(int idComercio) {
+    double ingresos = 0;
+    for (int i = 0; i < nReservas; i++) {
+        if (reservas[i].estado == "Completada") {
+            int pos = buscarProductoPorID(reservas[i].idProducto);
+            if (pos != -1 && productos[pos].idComercio == idComercio)
+                ingresos += reservas[i].total;
+        }
+    }
+    return ingresos;
+}
+double calcularIngresosTotales() {
+    double total = 0;
+    for (int i = 0; i < nReservas; i++)
+        if (reservas[i].estado == "Completada") total += reservas[i].total;
+    return total;
+}
